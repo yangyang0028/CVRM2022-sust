@@ -1,0 +1,17 @@
+{
+  "nms_thresh": 0.4,
+  "conf_thresh": 0.5,
+  "engine_dir": "/home/y/github/CVRM2022-sust/data/yolov5n.engine",
+  "run_mode": "armor_blue",
+  "source": "/home/y/文档/RM视觉素材/视觉素材/炮台素材蓝车后面-ev-0.MOV",
+  "show_mode": true,
+  "aim": {
+    "center_point": [
+      0,
+      0
+    ],
+    "width": 200,
+    "height": 200,
+    "min_size": 1000
+  }
+}
