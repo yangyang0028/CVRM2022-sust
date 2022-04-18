@@ -35,8 +35,23 @@ bool ReadJsonConfig(std::string config_dir, ConfigInfo *config_info) {
     } else {
         return false;
     }
+    if (rootValue.isMember("camera_config_dir") && rootValue["camera_config_dir"].isString()) {
+        config_info->camera_config_dir = rootValue["camera_config_dir"].asString();
+    } else {
+        return false;
+    }
+    if (rootValue.isMember("saved_video_dir") && rootValue["saved_video_dir"].isString()) {
+        config_info->saved_video_dir = rootValue["saved_video_dir"].asString();
+    } else {
+        return false;
+    }
     if (rootValue.isMember("source") && rootValue["source"].isString()) {
         config_info->source_dir = rootValue["source"].asString();
+    } else {
+        return false;
+    }
+    if (rootValue.isMember("serial_port") && rootValue["serial_port"].isString()) {
+        config_info->serial_port = rootValue["serial_port"].asString();
     } else {
         return false;
     }

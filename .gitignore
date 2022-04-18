@@ -1,2 +1,3 @@
 /cmake-build-debug-jetson-nano/
 build/*
+video/*

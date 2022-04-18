@@ -2,9 +2,12 @@
   "nms_thresh": 0.4,
   "conf_thresh": 0.5,
   "engine_dir": "/home/y/github/CVRM2022-sust/data/yolov5n.engine",
+  "camera_config_dir": "/home/y/github/CVRM2022-sust/camera/camera8mm.xml",
+  "saved_video_dir": "/home/y/github/CVRM2022-sust/video",
   "run_mode": "armor_blue",
-  "source": "/home/y/文档/RM视觉素材/视觉素材/炮台素材蓝车后面-ev-0.MOV",
-  "show_mode": true,
+  "source": "/dev/video0",
+  "serial_port": "/dev/ttyUSB0",
+  "show_mode": false,
   "aim": {
     "center_point": [
       0,

@@ -9,8 +9,11 @@ struct ConfigInfo{
     float nms_thresh;
     float conf_thresh;
     std::string engine_dir;
+    std::string camera_config_dir;
+    std::string saved_video_dir;
     std::string run_mode;
     std::string source_dir;
+    std::string serial_port;
     bool show_mode;
     cv::Point aim_point;
 };
