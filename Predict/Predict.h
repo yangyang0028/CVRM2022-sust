@@ -13,4 +13,6 @@ Eigen::Vector3d CameraCoordinatesToWorldCoordinates(const Eigen::Vector3d camera
 Eigen::Vector3d WorldCoordinatesToCameraCoordinates(const Eigen::Vector3d world_coordinates, const Eigen::Matrix3d rotation_matrix);
 cv::Point CameraCoordinatesToPixelCoordinates(const Eigen::Vector3d &camera_coordinates);
 
+void PredictHandle();
+
 #endif
