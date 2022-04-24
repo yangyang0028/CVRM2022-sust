@@ -11,8 +11,10 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 find_package(CUDA REQUIRED)
 
+
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/YoloLayer)
+include_directories(${PROJECT_SOURCE_DIR}/AutoAim)
 include_directories(/usr/local/cuda/include)
 link_directories(/usr/local/cuda/lib64)
 include_directories(/usr/include/x86_64-linux-gnu/)
@@ -43,11 +45,20 @@ add_library(AUTOAIM SHARED AutoAim/AutoAim.cpp)
 target_link_libraries(AUTOAIM myplugins)
 target_link_libraries(AUTOAIM ${OpenCV_LIBS})
 
-add_executable(CVRM2022-sust main.cpp)
+add_library(AUTOAIMCV SHARED AutoAim/AutoAimCV.cpp)
+target_link_libraries(AUTOAIMCV ${OpenCV_LIBS})
+
+add_executable(CVRM2022-sust CVRM2022-sust.cpp)
 target_link_libraries(CVRM2022-sust AUTOAIM)
 target_link_libraries(CVRM2022-sust ReadJson)
 target_link_libraries(CVRM2022-sust SerialPort)
 target_link_libraries(CVRM2022-sust Predict)
+
+add_executable(CVRM2021-sust CVRM2021-sust.cpp)
+target_link_libraries(CVRM2021-sust AUTOAIMCV)
+target_link_libraries(CVRM2021-sust ReadJson)
+target_link_libraries(CVRM2021-sust SerialPort)
+target_link_libraries(CVRM2021-sust Predict)
 
 if (UNIX)
     add_definitions(-O2 -pthread)

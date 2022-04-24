@@ -1,9 +1,11 @@
-#ifndef _MAIN_H
-#define _MAIN_H
+#ifndef _CVRM2022_SUST_H
+#define _CVRM2022_SUST_H
 #include "ReadJson/ReadJson.h"
 #include "SerialPort/SerialPort.h"
 #include "AutoAim/AutoAim.h"
 #include <pthread.h>
+
+#define CONFIG_DIR "/home/y/github/CVRM2022-sust/data/CVRM2022-sust.json"
 
 pthread_mutex_t g_serial_tx_mutex = PTHREAD_MUTEX_INITIALIZER;
 

@@ -1,5 +1,5 @@
-#ifndef _AUTO_AIM_H
-#define _AUTO_AIM_H
+#ifndef _AUTO_AIM_CV_H
+#define _AUTO_AIM_CV_H
 
 #include <opencv2/opencv.hpp>
 

@@ -2,7 +2,7 @@
 #include <ctime>
 #include <iostream>
 
-#include "main.h"
+#include "CVRM2022-sust.h"
 #include "ReadJson/ReadJson.h"
 #include "YoloLayer/common.hpp"
 #include "YoloLayer/cuda_utils.h"
