@@ -3,10 +3,14 @@
 #include <termios.h>
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
+#include "CVRM2022-sust.h"
+
+#include <unistd.h>
 
 int OpenPort(char *port) {
   int fd;
-  fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
+  fd = open(port, O_RDWR | O_NOCTTY);
   if (fd == -1) {
     perror("Can't Open SerialPort");
   }
@@ -90,4 +94,37 @@ int SetPort(int fd, int nSpeed, int nBits, char nEvent, int nStop) {
   }
   printf("set done!\n");
   return 0;
+}
+
+void SerialPortRxHandle(int srial_port) {
+  char buf_rx[100];
+  int offset = 0;
+  int rx_size = sizeof(SerialPortRx);
+  while(1) {
+    offset += read(srial_port, buf_rx + offset, std::min((100 - offset), rx_size));
+    for (int i = 0; i <= offset - rx_size ; i++) {
+      if (buf_rx[i] == g_serial_rx.start_flag && buf_rx[rx_size -1] == g_serial_rx.end_flag) {
+        std::memcpy(&g_serial_rx, buf_rx, rx_size);
+        offset = 0;
+        break;
+      }
+    }
+    if(offset == 100) {
+      offset = 0;
+    }
+  }
+}
+
+void SerialPortTxHandle(int srial_port) {
+  int tx_size = sizeof(SerialPortTx);
+  char buf_tx[100];
+  while(1) {
+    pthread_mutex_lock(&g_serial_tx_mutex);
+    std::memcpy(buf_tx, &g_serial_tx, tx_size);
+    pthread_mutex_unlock(&g_serial_tx_mutex);
+    if( write(srial_port, buf_tx, tx_size) != tx_size) {
+        std::cout<<"Write erroe!!! "<<std::endl;
+    }
+    usleep(1);
+  }
 }

@@ -1,6 +1,8 @@
 #include "Predict.h"
+#include "CVRM2022-sust.h"
 
 #include <opencv2/core/eigen.hpp>
+
 
 static const std::vector <cv::Point3d> g_ObjectPoints = {  // 单位：m
     {-0.0675, 0.0625,  0.},
@@ -44,4 +46,25 @@ cv::Point CameraCoordinatesToPixelCoordinates(const Eigen::Vector3d &camera_coor
     cv::cv2eigen(g_CameraMatrix, camera_matrix);
     Eigen::Vector3d image_matrix = camera_matrix * camera_coordinates / camera_coordinates(2, 0);
     return (cv::Point){int(image_matrix(0, 0)), int(image_matrix(1, 0))};
+}
+
+void PredictHandle() {
+    Eigen::Vector3d camera_coordinates;
+    std::vector<cv::Point2d> aim_point(4);
+    while(true) {
+        if(g_aim.is_find_arm) {
+            pthread_mutex_lock(&g_aim_mutex);
+            int x = g_aim.aim_rect.x;
+            int y = g_aim.aim_rect.y;
+            int width = g_aim.aim_rect.width;
+            int height = g_aim.aim_rect.height;
+            pthread_mutex_unlock(&g_aim_mutex);
+            aim_point[0] = cv::Point2d(x, y);
+            aim_point[1] = cv::Point2d(x + width, y);
+            aim_point[2] = cv::Point2d(x + width, y + height);
+            aim_point[3] = cv::Point2d(x, y + width);
+        }
+        camera_coordinates = PixelCoordinatesToCameraCoordinates(
+        aim_point, g_config_info.camera_config_dir);
+    }
 }

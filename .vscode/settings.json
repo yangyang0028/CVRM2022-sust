@@ -73,6 +73,7 @@
         "core": "cpp",
         "forward_list": "cpp",
         "unordered_set": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "filesystem": "cpp"
     }
 }

@@ -1,17 +1,14 @@
-#include "auto_aim.h"
+#include "AutoAim.h"
 #include <ctime>
 #include <iostream>
 
-#include <opencv2/opencv.hpp>
-#include "Predict/Predict.h"
+#include "CVRM2022-sust.h"
 #include "ReadJson/ReadJson.h"
 #include "YoloLayer/common.hpp"
 #include "YoloLayer/cuda_utils.h"
 #include "YoloLayer/logging.h"
 #include "YoloLayer/yololayer.h"
 #include "SerialPort/SerialPort.h"
-
-#include <unistd.h>
 
 #define DEVICE 0
 #define BATCH_SIZE 1
@@ -24,8 +21,6 @@ const cv::Scalar green = cv::Scalar(0x22, 0x8B, 0x22);
 const cv::Scalar pink = cv::Scalar(0xDD, 0xA0, 0xDD);
 const std::string class_name[] = {"armor_blue", "armor_red", "ignore",
                                   "base",       "watcher",   "car"};
-
-static ConfigInfo config_info = {0};
 
 static const char *INPUT_BLOB_NAME = "data";
 static const char *OUTPUT_BLOB_NAME = "prob";
@@ -75,17 +70,6 @@ static void doInference(IExecutionContext &context, cudaStream_t &stream,
 
 static int box_size(const cv::Rect &rect) { return rect.height * rect.width; }
 
-// static bool isPointInRect(const cv::Point &point, const cv::Rect &rect) {
-//   cv::Point A = rect.tl();
-//   cv::Point B = rect.br();
-//   if ((point.x > A.x) && (point.x < B.x) && (point.y > A.y) &&
-//       (point.y < B.y)) {
-//     return true;
-//   } else {
-//     return false;
-//   }
-// }
-
 static cv::Point rect_center_point(const cv::Rect &rect) {
   cv::Point center_point;
   center_point.x = rect.x + cvRound(rect.width / 2.0);
@@ -99,33 +83,14 @@ std::string getStringFromPoint(const cv::Point &point) {
   return str;
 }
 
-uint8_t g_communication_tx_protocol[5];
-uint8_t g_communication_rx_protocol[10];
+void AutoAimHandle() {
 
-int main() {
-  ReadJsonConfig(CONFIG_DIR, &config_info);
-  char tmp_string[30] = {0};
-  snprintf(tmp_string, sizeof(tmp_string), "/%ld.avi", time(0));
-  config_info.saved_video_dir = config_info.saved_video_dir + tmp_string;
-  std::cout << "nms_thresh  " << config_info.nms_thresh << std::endl;
-  std::cout << "conf_thresh  " << config_info.conf_thresh << std::endl;
-  std::cout << "engine_dir  " << config_info.engine_dir << std::endl;
-  std::cout << "camera_config_dir  " << config_info.camera_config_dir
-            << std::endl;
-  std::cout << "saved_video_dir  " << config_info.saved_video_dir << std::endl;
-  std::cout << "run_mode  " << config_info.run_mode << std::endl;
-  std::cout << "source  " << config_info.source_dir << std::endl;
-  std::cout << "serial_port  " << config_info.serial_port << std::endl;
-  std::cout << "show_mode  " << config_info.show_mode << std::endl;
-  std::cout << "center_point  " << config_info.aim_point << std::endl;
-
-  std::ifstream file(config_info.engine_dir, std::ios::binary);
+  std::ifstream file(g_config_info.engine_dir, std::ios::binary);
   if (!file.good()) {
-    std::cerr << " read " << config_info.engine_dir << " error! " << std::endl;
+    std::cerr << " read " << g_config_info.engine_dir << " error! " << std::endl;
     assert(0);
   }
-  int srial_port = OpenPort((char*)config_info.serial_port.data());
-  SetPort(srial_port,115200,8,'N',1);
+
   char *trtModelStream{nullptr};
   size_t size = 0;
   file.seekg(0, std::ifstream::end);
@@ -167,25 +132,25 @@ int main() {
   cudaStream_t stream;
   CUDA_CHECK(cudaStreamCreate(&stream));
 
-  cv::VideoCapture capture(config_info.source_dir);
+  cv::VideoCapture capture(g_config_info.source_dir);
   cv::VideoWriter output_video;
   if (!capture.isOpened()) {
     std::cerr << "Error opening video stream or file" << std::endl;
-    return -1;
+    return ;
   }
 
   cv::Size capture_size = cv::Size(capture.get(cv::CAP_PROP_FRAME_WIDTH),
                                    capture.get(cv::CAP_PROP_FRAME_HEIGHT));
 
   int myFourCC = cv::VideoWriter::fourcc('X', 'V', 'I', 'D');
-  output_video.open(config_info.saved_video_dir, myFourCC, 30.0, capture_size,
+  output_video.open(g_config_info.saved_video_dir, myFourCC, 30.0, capture_size,
                     true);
   if (!output_video.isOpened()) {
-    std::cout << config_info.saved_video_dir << " fail to open!" << std::endl;
-    return -1;
+    std::cout << g_config_info.saved_video_dir << " fail to open!" << std::endl;
+    return ;
   }
 
-  if (config_info.show_mode) {
+  if (g_config_info.show_mode) {
     cv::namedWindow("video", cv::WINDOW_AUTOSIZE);
   }
 
@@ -217,31 +182,28 @@ int main() {
     std::vector<std::vector<Yolo::Detection>> batch_res(1);
 
     auto &res = batch_res[0];
-    nms(res, prob, config_info.conf_thresh, config_info.nms_thresh);
+    nms(res, prob, g_config_info.conf_thresh, g_config_info.nms_thresh);
 
+    int aim_area = 0;
     cv::Point aim_point = {0};
-    int aim_point_area = 0;
-    std::vector<cv::Point2d> image_point(4);
-
+    cv::Rect aim_rect;
+    g_aim.is_find_arm = false;
+    
     for (size_t i = 0; i < res.size(); i++) {
       cv::Rect r = get_rect(frame, res[i].bbox);
       if ((res[i].class_id == 0 || res[i].class_id == 1) &&
           box_size(r) >= MIN_AIM_SIZE) {
         cv::rectangle(frame, r, green, 2);
-        if (config_info.run_mode == class_name[(int)res[i].class_id]) {
-          if (aim_point_area < r.area()) {
-            aim_point_area = r.area();
+        if (g_config_info.run_mode == class_name[(int)res[i].class_id]) {
+          if (aim_area < r.area()) {
+            aim_area = r.area();
             aim_point = rect_center_point(r);
-            image_point[0] = cv::Point2d(r.x, r.y);
-            image_point[1] = cv::Point2d(r.x + r.width, r.y);
-            image_point[2] = cv::Point2d(r.x + r.width, r.y + r.height);
-            image_point[3] = cv::Point2d(r.x, r.y + r.height);
+            aim_rect = r;
           }
         }
       } else {
         cv::rectangle(frame, r, pink, 2);
       }
-
       std::string label = class_name[(int)res[i].class_id];
       switch ((int)(res[i].class_id)) {
         case 0: {
@@ -261,17 +223,12 @@ int main() {
         }
       }
     }
-    if (aim_point_area) {
+    if (aim_area) {
       cv::circle(frame, aim_point, 4, white, 2, cv::LINE_AA);
-    }
-    g_communication_tx_protocol[0] = 0x55;
-    g_communication_tx_protocol[1] = (aim_point.x>>8) & 0xff;
-    g_communication_tx_protocol[2] = (aim_point.x) & 0xff;
-    g_communication_tx_protocol[3] = (aim_point.y>>8) & 0xff;
-    g_communication_tx_protocol[4] = (aim_point.y) & 0xff;
-    ssize_t tx_size = write(srial_port, g_communication_tx_protocol, 5);
-    if(tx_size != 5){
-        std::cout<<"Write erroe!!!"<<std::endl;
+      pthread_mutex_lock(&g_aim_mutex);
+      g_aim.aim_rect = aim_rect;
+      pthread_mutex_unlock(&g_aim_mutex);
+      g_aim.is_find_arm = true;
     }
     auto end = std::chrono::system_clock::now();
     int fps = (int)(1000.0 /
@@ -280,25 +237,16 @@ int main() {
                             .count(),
                         1));
     std::string video_fps = "FPS: " + std::to_string(fps);
-    std::cout << video_fps << std::endl;
     std::string aim_point_info = "Aim Point: " + getStringFromPoint(aim_point);
     cv::putText(frame, video_fps, cv::Point(10, 40), cv::FONT_HERSHEY_PLAIN, 3,
                 cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
     cv::putText(frame, aim_point_info, cv::Point(10, 80),
                 cv::FONT_HERSHEY_PLAIN, 3, cv::Scalar(255, 255, 255), 2,
-                cv::LINE_AA);
-    // std::cout<< aim_point_info <<std::endl;
-    Eigen::Vector3d camera_coordinates;
-    if (aim_point_area) {
-      camera_coordinates = PixelCoordinatesToCameraCoordinates(
-          image_point, config_info.camera_config_dir);
-      std::cout << camera_coordinates(2, 0) << ", " << std::endl;
-    }
+                cv::LINE_AA);  
     output_video.write(frame);
-    if (config_info.show_mode) {
+    if (g_config_info.show_mode) {
       cv::imshow("video", frame);
       cv::waitKey(1);
     }
   }
-  return 0;
 }
