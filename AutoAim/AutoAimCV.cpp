@@ -6,7 +6,7 @@ static cv::Rect g_last_target;
 
 static int g_lost_cnt = 0;
 
-static int g_gray_th = 10;
+static int g_gray_th = 50;
 
 static int g_color_th = 30;
 
@@ -283,6 +283,7 @@ void DetectArmor(cv::Mat& img, cv::Rect roi_rect) {
         g_aim.aim_rect = g_last_target;
         g_aim.is_find_arm = true;
         g_lost_cnt = 0;
+        g_aim.count ++;
     }else{
         g_last_target = cv::Rect(0, 0, 0, 0);
         g_aim.aim_rect = cv::Rect(0, 0, 0, 0);

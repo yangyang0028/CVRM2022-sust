@@ -103,9 +103,10 @@ void SerialPortRxHandle(int srial_port) {
   while(1) {
     offset += read(srial_port, buf_rx + offset, std::min((100 - offset), rx_size));
     for (int i = 0; i <= offset - rx_size ; i++) {
-      if (buf_rx[i] == g_serial_rx.start_flag && buf_rx[rx_size -1] == g_serial_rx.end_flag) {
+      if (buf_rx[i] == g_serial_rx.start_flag && buf_rx[rx_size - 1] == g_serial_rx.end_flag) {
         std::memcpy(&g_serial_rx, buf_rx, rx_size);
         offset = 0;
+        // std::cout<<g_serial_rx.yaw<<" "<<g_serial_rx.pitch<<std::endl;
         break;
       }
     }
@@ -125,6 +126,6 @@ void SerialPortTxHandle(int srial_port) {
     if( write(srial_port, buf_tx, tx_size) != tx_size) {
         std::cout<<"Write erroe!!! "<<std::endl;
     }
-    usleep(1);
+    usleep(10000);
   }
 }
