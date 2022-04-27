@@ -65,6 +65,11 @@ bool ReadJsonConfig(std::string config_dir, ConfigInfo *config_info) {
     } else {
         return false;
     }
+    if (rootValue.isMember("exposure") && rootValue["exposure"].asInt()) {
+        config_info->exposure = rootValue["exposure"].asInt();
+    } else {
+        return false;
+    }
     if (rootValue.isMember("aim") && rootValue["aim"].isObject()) {
         if (rootValue["aim"].isMember("center_point") && rootValue["aim"]["center_point"].isArray() && rootValue["aim"]["center_point"].size() == 2 
             && rootValue["aim"]["center_point"][0].isInt() && rootValue["aim"]["center_point"][1].isInt()) {

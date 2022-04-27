@@ -229,13 +229,10 @@ void AutoAimHandle() {
       g_aim.aim_rect = aim_rect;
       pthread_mutex_unlock(&g_aim_mutex);
       g_aim.is_find_arm = true;
+      g_aim.count ++;
     }
     auto end = std::chrono::system_clock::now();
-    int fps = (int)(1000.0 /
-                    MIN(std::chrono::duration_cast<std::chrono::milliseconds>(
-                            end - start)
-                            .count(),
-                        1));
+    int fps = (int) (1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
     std::string video_fps = "FPS: " + std::to_string(fps);
     std::string aim_point_info = "Aim Point: " + getStringFromPoint(aim_point);
     cv::putText(frame, video_fps, cv::Point(10, 40), cv::FONT_HERSHEY_PLAIN, 3,

@@ -14,6 +14,7 @@ struct ConfigInfo{
     std::string run_mode;
     std::string source_dir;
     std::string serial_port;
+    int exposure;
     bool show_mode;
     cv::Point aim_point;
 };
