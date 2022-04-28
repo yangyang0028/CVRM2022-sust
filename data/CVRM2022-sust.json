@@ -8,7 +8,7 @@
   "source": "/dev/video0",
   "serial_port": "/dev/ttyUSB0",
   "show_mode": true,
-  "exposure": 20,
+  "exposure": 30,
   "aim": {
     "center_point": [
       320,

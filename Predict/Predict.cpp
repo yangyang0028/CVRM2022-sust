@@ -3,6 +3,10 @@
 
 #include <opencv2/core/eigen.hpp>
 
+#include "KalmanFilter.h"
+
+
+
 
 static const std::vector <cv::Point3d> g_ObjectPoints = {  // 单位：m
     {-0.0675, 0.0625,  0.},
@@ -58,7 +62,44 @@ void PredictHandle() {
     Eigen::Vector3d predict_world_coordinates;
     Eigen::Vector3d predict_camera_coordinates;
     cv::Point predict_pixel_coordinates;
-    // time_t now_time = time(0);
+
+    int stateSize = 9;
+    int measSize = 3;
+    int controlSize = 0;
+    float T = 0.1;
+    KalmanFilter kf(stateSize, measSize, controlSize);
+
+    Eigen::MatrixXd A(stateSize, stateSize);
+        A<< 1, 0, 0, T, 0, 0, 1 / 2 * T*T, 0, 0,
+            0, 1, 0, 0, T, 0, 0, 1 / 2 * T*T, 0,
+            0, 0, 1, 0, 0, T, 0, 0, 1 / 2 * T*T,
+            0, 0, 0, 1, 0, 0, T, 0, 0,
+            0, 0, 0, 0, 1, 0, 0, T, 0,
+            0, 0, 0, 0, 0, 1, 0, 0, T,
+            0, 0, 0, 0, 0, 0, 1, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 1, 0,
+            0, 0, 0, 0, 0, 1, 0, 0, 1;
+
+    Eigen::MatrixXd H(measSize, stateSize);
+    H<< 1, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0, 0, 0, 0, 0;
+
+    Eigen::MatrixXd P(stateSize, stateSize);
+    P.setIdentity();
+    Eigen::MatrixXd R(measSize, measSize);
+    R.setIdentity()*0.01;
+    Eigen::MatrixXd Q(stateSize, stateSize);
+    Q.setIdentity()*0.001;
+    Eigen::VectorXd x(stateSize);
+    Eigen::VectorXd u(0);
+    Eigen::VectorXd z(measSize);
+    z.setZero();
+    Eigen::VectorXd res(stateSize);
+
+    x << 0, 0, 0, 0, 0, 0, 0, 0, 0;
+    kf.init(x, P, R, Q);
+
     std::vector<cv::Point2d> aim_point(4);
     while(true) {
         Eigen::Matrix3d RotationMatrix =EulerAngleToRotationMatrix(g_serial_rx.roll, g_serial_rx.pitch, g_serial_rx.yaw);
@@ -81,9 +122,22 @@ void PredictHandle() {
             // std::cout<<atan(world_coordinates(0,0)/world_coordinates(2,0))<<" "<<atan(world_coordinates(1,0)/world_coordinates(2,0))<<std::endl;
             world_coordinates = CameraCoordinatesToWorldCoordinates(camera_coordinates, RotationMatrix);
             // std::cout << "world_coordinates " << world_coordinates(0,0)<<" "<<world_coordinates(1,0)<<" "<<world_coordinates(2,0)<< std::endl;
-            predict_world_coordinates = (world_coordinates - last_world_coordinates) * 20 + world_coordinates;
-            last_world_coordinates = predict_world_coordinates;
-            predict_camera_coordinates = WorldCoordinatesToCameraCoordinates(world_coordinates, RotationMatrix);
+            // predict_world_coordinates = (world_coordinates - last_world_coordinates) * 20 + world_coordinates;
+            // last_world_coordinates = predict_world_coordinates;
+
+            kf.predict(A);
+            z << world_coordinates(0,0), world_coordinates(1,0), world_coordinates(2,0);
+            res << kf.update(H,z);
+            // std::cout << world_coordinates(0,0) << " " <<world_coordinates(1,0) << " " << world_coordinates(2,0) 
+            // << " " << res[0] << " " << res[1] << " " << res[2]
+            // << " " << res[3] << " " << res[4] << " " << res[5]
+            // << " " << res[6] << " " << res[7] << " " << res[8] << std::endl;
+
+            predict_world_coordinates(0,0) = res[0];
+            predict_world_coordinates(1,0) = res[1];
+            predict_world_coordinates(2,0) = res[2];
+
+            predict_camera_coordinates = WorldCoordinatesToCameraCoordinates(predict_world_coordinates, RotationMatrix);
             predict_pixel_coordinates = CameraCoordinatesToPixelCoordinates(camera_coordinates);
             g_serial_tx.x_offset = predict_pixel_coordinates.x - g_config_info.aim_point.x;
             g_serial_tx.y_offset = predict_pixel_coordinates.y - g_config_info.aim_point.y;

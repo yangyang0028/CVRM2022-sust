@@ -6,7 +6,7 @@ add_definitions(-std=c++11)
 add_definitions(-DAPI_EXPORTS)
 option(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE release)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 find_package(CUDA REQUIRED)
@@ -35,9 +35,13 @@ target_link_libraries(ReadJson jsoncpp)
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
+add_library(KalmanFilter SHARED Predict/KalmanFilter.cpp)
+target_link_libraries(KalmanFilter ${EIGEN3_LIBS})
+
 add_library(Predict SHARED Predict/Predict.cpp)
 target_link_libraries(Predict ${EIGEN3_LIBS})
 target_link_libraries(Predict ${OpenCV_LIBS})
+target_link_libraries(Predict KalmanFilter)
 
 add_library(SerialPort SHARED SerialPort/SerialPort.cpp)
 

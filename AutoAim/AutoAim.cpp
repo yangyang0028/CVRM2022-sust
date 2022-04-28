@@ -143,7 +143,7 @@ void AutoAimHandle() {
                                    capture.get(cv::CAP_PROP_FRAME_HEIGHT));
 
   int myFourCC = cv::VideoWriter::fourcc('X', 'V', 'I', 'D');
-  output_video.open(g_config_info.saved_video_dir, myFourCC, 30.0, capture_size,
+  output_video.open(g_config_info.saved_video_dir, myFourCC, 20.0, capture_size,
                     true);
   if (!output_video.isOpened()) {
     std::cout << g_config_info.saved_video_dir << " fail to open!" << std::endl;
