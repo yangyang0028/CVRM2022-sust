@@ -1,17 +1,18 @@
 {
   "nms_thresh": 0.4,
   "conf_thresh": 0.5,
-  "engine_dir": "/home/y/github/CVRM2022-sust/data/yolov5s.engine",
+  "engine_dir": "/home/y/github/CVRM2022-sust/data/yolov5n.engine",
   "camera_config_dir": "/home/y/github/CVRM2022-sust/camera/camera8mm.xml",
   "saved_video_dir": "/home/y/github/CVRM2022-sust/video",
   "run_mode": "armor_red",
   "source": "/dev/video0",
   "serial_port": "/dev/ttyUSB0",
   "show_mode": true,
+  "exposure": 10,
   "aim": {
     "center_point": [
-      0,
-      0
+      320,
+      340
     ],
     "width": 200,
     "height": 200,

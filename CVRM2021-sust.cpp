@@ -3,6 +3,7 @@
 #include "AutoAimCV.h"
 #include <iostream>
 #include <thread>
+#include "camera/carmera.h"
 
 static int g_srial_port = 0;
 
@@ -20,10 +21,13 @@ int main() {
     std::cout << "source  " << g_config_info.source_dir << std::endl;
     std::cout << "serial_port  " << g_config_info.serial_port << std::endl;
     std::cout << "show_mode  " << g_config_info.show_mode << std::endl;
+    std::cout << "exposure  " << g_config_info.exposure << std::endl;
     std::cout << "center_point  " << g_config_info.aim_point << std::endl;
 
     g_srial_port = OpenPort((char*)g_config_info.serial_port.data());
     SetPort(g_srial_port,115200,8,'N',1);
+
+    SetExposure(g_config_info.source_dir.data(), g_config_info.exposure);
 
     std::thread AutoAim(AutoAimHandle);
     std::thread Predict(PredictHandle);

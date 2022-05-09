@@ -48,10 +48,20 @@ cv::Point CameraCoordinatesToPixelCoordinates(const Eigen::Vector3d &camera_coor
     return (cv::Point){int(image_matrix(0, 0)), int(image_matrix(1, 0))};
 }
 
+extern struct SerialPortRx g_serial_rx;
+Eigen::Vector3d last_world_coordinates;
+static uint32_t count = 0;
+// time_t last_time;
 void PredictHandle() {
     Eigen::Vector3d camera_coordinates;
+    Eigen::Vector3d world_coordinates;
+    Eigen::Vector3d predict_world_coordinates;
+    Eigen::Vector3d predict_camera_coordinates;
+    cv::Point predict_pixel_coordinates;
+    // time_t now_time = time(0);
     std::vector<cv::Point2d> aim_point(4);
     while(true) {
+        Eigen::Matrix3d RotationMatrix =EulerAngleToRotationMatrix(g_serial_rx.roll, g_serial_rx.pitch, g_serial_rx.yaw);
         if(g_aim.is_find_arm) {
             pthread_mutex_lock(&g_aim_mutex);
             int x = g_aim.aim_rect.x;
@@ -63,8 +73,29 @@ void PredictHandle() {
             aim_point[1] = cv::Point2d(x + width, y);
             aim_point[2] = cv::Point2d(x + width, y + height);
             aim_point[3] = cv::Point2d(x, y + width);
+            // g_serial_tx.x_offset = x + width/2 - g_config_info.aim_point.x;
+            // g_serial_tx.y_offset = y + height/2 - g_config_info.aim_point.y;
+            // g_serial_tx.shooting = 1;
+            camera_coordinates = PixelCoordinatesToCameraCoordinates(aim_point, g_config_info.camera_config_dir);
+            // std::cout<<g_serial_rx.roll<<" "<<g_serial_rx.pitch<<" "<<g_serial_rx.yaw<<std::endl;
+            // std::cout<<atan(world_coordinates(0,0)/world_coordinates(2,0))<<" "<<atan(world_coordinates(1,0)/world_coordinates(2,0))<<std::endl;
+            world_coordinates = CameraCoordinatesToWorldCoordinates(camera_coordinates, RotationMatrix);
+            // std::cout << "world_coordinates " << world_coordinates(0,0)<<" "<<world_coordinates(1,0)<<" "<<world_coordinates(2,0)<< std::endl;
+            predict_world_coordinates = (world_coordinates - last_world_coordinates) * 20 + world_coordinates;
+            last_world_coordinates = predict_world_coordinates;
+            predict_camera_coordinates = WorldCoordinatesToCameraCoordinates(world_coordinates, RotationMatrix);
+            predict_pixel_coordinates = CameraCoordinatesToPixelCoordinates(camera_coordinates);
+            g_serial_tx.x_offset = predict_pixel_coordinates.x - g_config_info.aim_point.x;
+            g_serial_tx.y_offset = predict_pixel_coordinates.y - g_config_info.aim_point.y;
+            if (count != g_aim.count) {
+                count = g_aim.count;
+                g_serial_tx.x_offset = std::max( g_serial_tx.x_offset - 0.01, 0.0);
+                g_serial_tx.y_offset = std::max( g_serial_tx.y_offset - 0.01, 0.0);
+            }
+            g_serial_tx.shooting = 1;
+            // std::cout << "predict_pixel_coordinates " << predict_pixel_coordinates.x - (x + width/2)<<" "<<predict_pixel_coordinates.y - (y + height/2)<< std::endl;
+        }else {
+            g_serial_tx.shooting = 0;
         }
-        camera_coordinates = PixelCoordinatesToCameraCoordinates(
-        aim_point, g_config_info.camera_config_dir);
     }
 }

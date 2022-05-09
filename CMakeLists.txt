@@ -48,17 +48,24 @@ target_link_libraries(AUTOAIM ${OpenCV_LIBS})
 add_library(AUTOAIMCV SHARED AutoAim/AutoAimCV.cpp)
 target_link_libraries(AUTOAIMCV ${OpenCV_LIBS})
 
+add_library(CAMERA camera/carmera.cpp)
+
 add_executable(CVRM2022-sust CVRM2022-sust.cpp)
+target_link_libraries(CVRM2022-sust CAMERA)
 target_link_libraries(CVRM2022-sust AUTOAIM)
 target_link_libraries(CVRM2022-sust ReadJson)
 target_link_libraries(CVRM2022-sust SerialPort)
 target_link_libraries(CVRM2022-sust Predict)
 
 add_executable(CVRM2021-sust CVRM2021-sust.cpp)
+target_link_libraries(CVRM2021-sust CAMERA)
 target_link_libraries(CVRM2021-sust AUTOAIMCV)
 target_link_libraries(CVRM2021-sust ReadJson)
 target_link_libraries(CVRM2021-sust SerialPort)
 target_link_libraries(CVRM2021-sust Predict)
+
+# add_executable(SetCamera SetCamera.cpp)
+# target_link_libraries(SetCamera ${OpenCV_LIBS})
 
 if (UNIX)
     add_definitions(-O2 -pthread)
